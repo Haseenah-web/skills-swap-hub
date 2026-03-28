@@ -1,0 +1,227 @@
+.profile-page {
+  min-height: calc(100vh - 76px);
+  padding: 2rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.profile-card {
+  max-width: 900px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 45px rgba(30, 64, 175, 0.15);
+  border: 1px solid #dbeafe;
+  overflow: hidden;
+}
+
+.profile-header {
+  padding: 2rem;
+  color: #1e3a8a;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-bottom: 1px solid #bfdbfe;
+}
+
+.profile-header h1 {
+  font-size: 1.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.profile-header p {
+  color: #1d4ed8;
+}
+
+.profile-loading {
+  padding: 2rem;
+  color: #334155;
+}
+
+.profile-form {
+  padding: 2rem;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.profile-field span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.profile-field input,
+.profile-field textarea {
+  width: 100%;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.8rem;
+  padding: 0.8rem 0.9rem;
+  font-size: 1rem;
+  font-family: inherit;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-field input:focus,
+.profile-field textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+.profile-field input[readonly] {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.profile-field--full {
+  grid-column: 1 / -1;
+}
+
+.profile-save-btn {
+  margin-top: 1.5rem;
+  border: none;
+  border-radius: 0.8rem;
+  padding: 0.9rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.profile-save-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.profile-skills-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  padding: 0 2rem 2rem;
+}
+
+.profile-skill-card {
+  border: 1px solid #dbeafe;
+  border-radius: 1rem;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.profile-skill-card h2 {
+  color: #1e3a8a;
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.profile-skill-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.profile-skill-form select,
+.profile-skill-form input {
+  width: 100%;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.7rem;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.95rem;
+  background: #ffffff;
+}
+
+.profile-skill-form select:focus,
+.profile-skill-form input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.profile-add-btn {
+  grid-column: 1 / -1;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  cursor: pointer;
+}
+
+.profile-add-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.profile-skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.profile-skill-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #ffffff;
+}
+
+.profile-skill-item p {
+  margin: 0.2rem 0 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.profile-skill-empty {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.profile-remove-btn {
+  border: none;
+  border-radius: 0.6rem;
+  padding: 0.4rem 0.65rem;
+  color: #fff;
+  background: #ef4444;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.profile-remove-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 1rem;
+  }
+
+  .profile-header,
+  .profile-form {
+    padding: 1.25rem;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-skills-grid {
+    grid-template-columns: 1fr;
+    padding: 0 1.25rem 1.25rem;
+  }
+}

@@ -54,7 +54,7 @@ const Navbar = ({ isAuthenticated, user, onLogout }) => {
               <Link to="/dashboard" style={styles.navLink}>
                 <FaUser /> Dashboard
               </Link>
-              <Link to="/dashboard" style={styles.navLink}>Profile</Link>
+              <Link to="/profile" style={styles.navLink}>Profile</Link>
               <button onClick={handleLogout} style={styles.logoutBtn}>
                 <FaSignOutAlt /> Logout
               </button>
@@ -91,7 +91,7 @@ const Navbar = ({ isAuthenticated, user, onLogout }) => {
             {isAuthenticated ? (
               <>
                 <Link to="/dashboard" style={styles.mobileNavLink} onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
-                <Link to="/dashboard" style={styles.mobileNavLink} onClick={() => setIsMenuOpen(false)}>Profile</Link>
+                <Link to="/profile" style={styles.mobileNavLink} onClick={() => setIsMenuOpen(false)}>Profile</Link>
                 <button onClick={handleLogout} style={styles.mobileLogoutBtn}>Logout</button>
               </>
             ) : (

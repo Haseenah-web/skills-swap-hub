@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Navbar';
@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -29,19 +30,24 @@ function App() {
     }
   }, []);
 
-  const handleLogin = (userData, token) => {
+  const handleLogin = useCallback((userData, token) => {
     setIsAuthenticated(true);
     setUser(userData);
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
-  };
+  }, []);
 
-  const handleLogout = () => {
+  const handleUserUpdate = useCallback((updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  }, []);
+
+  const handleLogout = useCallback(() => {
     setIsAuthenticated(false);
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-  };
+  }, []);
 
   return (
     <Router>
@@ -94,6 +100,14 @@ function App() {
           element={
             isAuthenticated ? 
             <Dashboard user={user} /> : 
+            <Navigate to="/login" />
+          } 
+        />
+        <Route
+          path="/profile"
+          element={
+            isAuthenticated ?
+            <Profile user={user} onUserUpdate={handleUserUpdate} /> :
             <Navigate to="/login" />
           } 
         />
