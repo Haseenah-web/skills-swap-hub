@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Cartoon girl avatar">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c7d2fe"/>
+      <stop offset="100%" stop-color="#bfdbfe"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="62" fill="url(#bg)"/>
+  <ellipse cx="64" cy="92" rx="30" ry="24" fill="#f59e0b" opacity="0.22"/>
+  <path d="M38 55c0-19 12-32 26-32s26 13 26 32v10H38V55z" fill="#0f172a"/>
+  <circle cx="64" cy="58" r="25" fill="#fde68a"/>
+  <path d="M43 53c2-14 10-21 21-21s19 7 21 21c-6-6-14-9-21-9s-15 3-21 9z" fill="#111827"/>
+  <circle cx="55" cy="59" r="3" fill="#1f2937"/>
+  <circle cx="73" cy="59" r="3" fill="#1f2937"/>
+  <path d="M57 69c2 3 4 4 7 4s5-1 7-4" stroke="#9a3412" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M64 78l-20 11h40L64 78z" fill="#ef4444"/>
+  <circle cx="48" cy="66" r="3" fill="#fb7185" opacity="0.5"/>
+  <circle cx="80" cy="66" r="3" fill="#fb7185" opacity="0.5"/>
+</svg>
