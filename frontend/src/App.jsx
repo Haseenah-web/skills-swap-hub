@@ -6,7 +6,9 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import FindMatches from './pages/FindMatches';
 import Profile from './pages/Profile';
+import SkillSwap from './pages/SkillSwap';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -102,6 +104,22 @@ function App() {
             <Dashboard user={user} /> : 
             <Navigate to="/login" />
           } 
+        />
+        <Route
+          path="/find-match"
+          element={
+            isAuthenticated ?
+            <FindMatches /> :
+            <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/skill-swap"
+          element={
+            isAuthenticated ?
+            <SkillSwap /> :
+            <Navigate to="/login" />
+          }
         />
         <Route
           path="/profile"

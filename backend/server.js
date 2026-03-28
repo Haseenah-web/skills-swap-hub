@@ -8,6 +8,7 @@ const { connectDB, pool } = require('./db');
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 const VALID_SKILL_LEVELS = new Set(['beginner', 'intermediate', 'advanced', 'expert']);
+const VALID_SWAP_STATUSES = new Set(['pending', 'accepted', 'rejected', 'completed', 'cancelled']);
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
@@ -74,6 +75,17 @@ const normalizeSkillLevel = (value, fallbackLevel) => {
   }
   const normalized = value.trim().toLowerCase();
   if (!VALID_SKILL_LEVELS.has(normalized)) {
+    return null;
+  }
+  return normalized;
+};
+
+const normalizeSwapStatus = (value) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (!VALID_SWAP_STATUSES.has(normalized)) {
     return null;
   }
   return normalized;
@@ -238,6 +250,152 @@ app.get('/api/users/me', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/api/users/matches', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const rawSkillId = req.query.skillId;
+    const rawCity = typeof req.query.city === 'string' ? req.query.city.trim() : '';
+    const rawLevel = typeof req.query.level === 'string' ? req.query.level.trim() : '';
+
+    const skillId = rawSkillId === undefined || rawSkillId === ''
+      ? null
+      : parseSkillId(rawSkillId);
+    if (rawSkillId !== undefined && rawSkillId !== '' && !skillId) {
+      return res.status(400).json({ message: 'Invalid skillId filter' });
+    }
+
+    const level = rawLevel ? normalizeSkillLevel(rawLevel, null) : null;
+    if (rawLevel && !level) {
+      return res.status(400).json({ message: 'Invalid level filter' });
+    }
+
+    const cityPattern = `%${rawCity}%`;
+
+    const [rows] = await pool.execute(
+      `SELECT u.id, u.name, u.email, u.phone, u.city, u.bio, u.created_at
+       FROM users u
+       WHERE u.id <> ?
+         AND (
+           EXISTS (
+             SELECT 1
+             FROM user_skills_offered uso
+             WHERE uso.user_id = u.id
+               AND uso.skill_id IN (SELECT skill_id FROM user_skills_wanted WHERE user_id = ?)
+           )
+           OR EXISTS (
+             SELECT 1
+             FROM user_skills_wanted usw
+             WHERE usw.user_id = u.id
+               AND usw.skill_id IN (SELECT skill_id FROM user_skills_offered WHERE user_id = ?)
+           )
+         )
+         AND (? = '' OR u.city LIKE ?)
+         AND (
+           ? IS NULL
+           OR EXISTS (
+             SELECT 1
+             FROM user_skills_offered uso2
+             WHERE uso2.user_id = u.id
+               AND uso2.skill_id = ?
+           )
+           OR EXISTS (
+             SELECT 1
+             FROM user_skills_wanted usw2
+             WHERE usw2.user_id = u.id
+               AND usw2.skill_id = ?
+           )
+         )
+         AND (
+           ? IS NULL
+           OR EXISTS (
+             SELECT 1
+             FROM user_skills_offered uso3
+             WHERE uso3.user_id = u.id
+               AND uso3.level = ?
+           )
+           OR EXISTS (
+             SELECT 1
+             FROM user_skills_wanted usw3
+             WHERE usw3.user_id = u.id
+               AND usw3.level = ?
+           )
+         )
+       ORDER BY u.created_at DESC`,
+      [userId, userId, userId, rawCity, cityPattern, skillId, skillId, skillId, level, level, level]
+    );
+
+    if (rows.length === 0) {
+      return res.status(200).json({ matches: [] });
+    }
+
+    const userIds = rows.map((row) => row.id);
+    const placeholders = userIds.map(() => '?').join(', ');
+
+    const [offeredRows] = await pool.execute(
+      `SELECT uso.user_id AS userId, s.id AS skillId, s.name, s.category, uso.level, uso.note
+       FROM user_skills_offered uso
+       INNER JOIN skills s ON s.id = uso.skill_id
+       WHERE uso.user_id IN (${placeholders})
+       ORDER BY s.name ASC`,
+      userIds
+    );
+
+    const [wantedRows] = await pool.execute(
+      `SELECT usw.user_id AS userId, s.id AS skillId, s.name, s.category, usw.level, usw.note
+       FROM user_skills_wanted usw
+       INNER JOIN skills s ON s.id = usw.skill_id
+       WHERE usw.user_id IN (${placeholders})
+       ORDER BY s.name ASC`,
+      userIds
+    );
+
+    const offeredByUser = new Map();
+    const wantedByUser = new Map();
+
+    for (const row of offeredRows) {
+      if (!offeredByUser.has(row.userId)) {
+        offeredByUser.set(row.userId, []);
+      }
+      offeredByUser.get(row.userId).push({
+        skillId: row.skillId,
+        name: row.name,
+        category: row.category,
+        level: row.level,
+        note: row.note,
+      });
+    }
+
+    for (const row of wantedRows) {
+      if (!wantedByUser.has(row.userId)) {
+        wantedByUser.set(row.userId, []);
+      }
+      wantedByUser.get(row.userId).push({
+        skillId: row.skillId,
+        name: row.name,
+        category: row.category,
+        level: row.level,
+        note: row.note,
+      });
+    }
+
+    const matches = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      phone: row.phone,
+      city: row.city,
+      bio: row.bio,
+      created_at: row.created_at,
+      offeredSkills: offeredByUser.get(row.id) || [],
+      wantedSkills: wantedByUser.get(row.id) || [],
+    }));
+
+    return res.status(200).json({ matches });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 app.put('/api/users/me', authenticateToken, async (req, res) => {
   try {
     const { name, phone, city, bio } = req.body;
@@ -389,6 +547,177 @@ app.delete('/api/users/me/skills/wanted/:skillId', authenticateToken, async (req
     }
 
     return res.status(200).json({ message: 'Skill removed from wanted list' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+app.post('/api/swaps', authenticateToken, async (req, res) => {
+  try {
+    const requesterId = req.user.userId;
+    const receiverId = parseSkillId(req.body.receiverId);
+    const offeredSkillId = parseSkillId(req.body.offeredSkillId);
+    const requestedSkillId = parseSkillId(req.body.requestedSkillId);
+    const message = normalizeOptionalString(req.body.message);
+    const scheduledAt = normalizeOptionalString(req.body.scheduledAt);
+
+    if (!receiverId || !offeredSkillId || !requestedSkillId) {
+      return res.status(400).json({ message: 'receiverId, offeredSkillId, and requestedSkillId are required' });
+    }
+    if (receiverId === requesterId) {
+      return res.status(400).json({ message: 'Cannot create swap request with yourself' });
+    }
+
+    const [receiverRows] = await pool.execute('SELECT id FROM users WHERE id = ? LIMIT 1', [receiverId]);
+    if (receiverRows.length === 0) {
+      return res.status(404).json({ message: 'Receiver not found' });
+    }
+
+    const [offeredMappingRows] = await pool.execute(
+      'SELECT id FROM user_skills_offered WHERE user_id = ? AND skill_id = ? LIMIT 1',
+      [requesterId, offeredSkillId]
+    );
+    if (offeredMappingRows.length === 0) {
+      return res.status(400).json({ message: 'You can only offer skills from your offered list' });
+    }
+
+    const [requestedMappingRows] = await pool.execute(
+      'SELECT id FROM user_skills_offered WHERE user_id = ? AND skill_id = ? LIMIT 1',
+      [receiverId, requestedSkillId]
+    );
+    if (requestedMappingRows.length === 0) {
+      return res.status(400).json({ message: 'Requested skill is not offered by selected user' });
+    }
+
+    const [insertResult] = await pool.execute(
+      `INSERT INTO swap_requests (
+         requester_id, receiver_id, offered_skill_id, requested_skill_id, message, scheduled_at
+       ) VALUES (?, ?, ?, ?, ?, ?)`,
+      [requesterId, receiverId, offeredSkillId, requestedSkillId, message, scheduledAt]
+    );
+
+    return res.status(201).json({
+      message: 'Swap request created',
+      swapId: insertResult.insertId,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+app.get('/api/swaps/incoming', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const [rows] = await pool.execute(
+      `SELECT sr.id, sr.requester_id AS requesterId, sr.receiver_id AS receiverId,
+              sr.offered_skill_id AS offeredSkillId, sr.requested_skill_id AS requestedSkillId,
+              sr.message, sr.status, sr.scheduled_at AS scheduledAt,
+              sr.created_at AS createdAt, sr.updated_at AS updatedAt,
+              u.name AS requesterName, u.city AS requesterCity, u.email AS requesterEmail,
+              offered_skill.name AS offeredSkillName,
+              requested_skill.name AS requestedSkillName
+       FROM swap_requests sr
+       INNER JOIN users u ON u.id = sr.requester_id
+       INNER JOIN skills offered_skill ON offered_skill.id = sr.offered_skill_id
+       INNER JOIN skills requested_skill ON requested_skill.id = sr.requested_skill_id
+       WHERE sr.receiver_id = ?
+       ORDER BY sr.created_at DESC`,
+      [userId]
+    );
+
+    return res.status(200).json({ swaps: rows });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+app.get('/api/swaps/outgoing', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const [rows] = await pool.execute(
+      `SELECT sr.id, sr.requester_id AS requesterId, sr.receiver_id AS receiverId,
+              sr.offered_skill_id AS offeredSkillId, sr.requested_skill_id AS requestedSkillId,
+              sr.message, sr.status, sr.scheduled_at AS scheduledAt,
+              sr.created_at AS createdAt, sr.updated_at AS updatedAt,
+              u.name AS receiverName, u.city AS receiverCity, u.email AS receiverEmail,
+              offered_skill.name AS offeredSkillName,
+              requested_skill.name AS requestedSkillName
+       FROM swap_requests sr
+       INNER JOIN users u ON u.id = sr.receiver_id
+       INNER JOIN skills offered_skill ON offered_skill.id = sr.offered_skill_id
+       INNER JOIN skills requested_skill ON requested_skill.id = sr.requested_skill_id
+       WHERE sr.requester_id = ?
+       ORDER BY sr.created_at DESC`,
+      [userId]
+    );
+
+    return res.status(200).json({ swaps: rows });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+app.patch('/api/swaps/:id/status', authenticateToken, async (req, res) => {
+  try {
+    const swapId = parseSkillId(req.params.id);
+    const nextStatus = normalizeSwapStatus(req.body.status);
+    const userId = req.user.userId;
+
+    if (!swapId) {
+      return res.status(400).json({ message: 'Invalid swap id' });
+    }
+    if (!nextStatus) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const [rows] = await pool.execute(
+      `SELECT id, requester_id AS requesterId, receiver_id AS receiverId, status
+       FROM swap_requests
+       WHERE id = ?
+       LIMIT 1`,
+      [swapId]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Swap request not found' });
+    }
+
+    const swap = rows[0];
+    const isRequester = swap.requesterId === userId;
+    const isReceiver = swap.receiverId === userId;
+
+    if (!isRequester && !isReceiver) {
+      return res.status(403).json({ message: 'Not authorized for this swap' });
+    }
+
+    const currentStatus = swap.status;
+    if (currentStatus === nextStatus) {
+      return res.status(200).json({ message: 'Status unchanged' });
+    }
+
+    if (nextStatus === 'accepted' || nextStatus === 'rejected') {
+      if (!isReceiver || currentStatus !== 'pending') {
+        return res.status(400).json({ message: 'Only receiver can accept/reject pending swaps' });
+      }
+    } else if (nextStatus === 'cancelled') {
+      if (!isRequester || currentStatus !== 'pending') {
+        return res.status(400).json({ message: 'Only requester can cancel pending swaps' });
+      }
+    } else if (nextStatus === 'completed') {
+      if (currentStatus !== 'accepted') {
+        return res.status(400).json({ message: 'Only accepted swaps can be marked completed' });
+      }
+    } else if (nextStatus === 'pending') {
+      return res.status(400).json({ message: 'Cannot transition back to pending' });
+    }
+
+    await pool.execute(
+      `UPDATE swap_requests
+       SET status = ?
+       WHERE id = ?`,
+      [nextStatus, swapId]
+    );
+
+    return res.status(200).json({ message: `Swap status updated to ${nextStatus}` });
   } catch (error) {
     return res.status(500).json({ message: 'Server error', error: error.message });
   }

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -8,6 +8,7 @@ const Dashboard = ({ user }) => {
   const [skills, setSkills] = useState([]);
   const [offeredSkills, setOfferedSkills] = useState([]);
   const [wantedSkills, setWantedSkills] = useState([]);
+
   const [offeredDraft, setOfferedDraft] = useState({
     skillId: '',
     level: 'intermediate',
@@ -18,6 +19,7 @@ const Dashboard = ({ user }) => {
     level: 'beginner',
     note: '',
   });
+
   const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3003').replace(/\/$/, '');
   const skillLevelOptions = ['beginner', 'intermediate', 'advanced', 'expert'];
 
@@ -41,15 +43,26 @@ const Dashboard = ({ user }) => {
     }
 
     try {
-      const [profileResponse, skillsResponse] = await Promise.all([
+      const [profileResponse, skillsResponse, incomingResponse, outgoingResponse] = await Promise.all([
         axios.get(`${API_BASE_URL}/api/users/me`, authConfig),
         axios.get(`${API_BASE_URL}/api/skills`),
+        axios.get(`${API_BASE_URL}/api/swaps/incoming`, authConfig),
+        axios.get(`${API_BASE_URL}/api/swaps/outgoing`, authConfig),
       ]);
 
       const profile = profileResponse.data?.user || {};
       setOfferedSkills(profile.offeredSkills || []);
       setWantedSkills(profile.wantedSkills || []);
       setSkills(skillsResponse.data?.skills || []);
+
+      const swaps = [
+        ...(incomingResponse.data?.swaps || []),
+        ...(outgoingResponse.data?.swaps || []),
+      ];
+      setSwapCounts({
+        active: swaps.filter((swap) => ['pending', 'accepted'].includes(swap.status)).length,
+        completed: swaps.filter((swap) => swap.status === 'completed').length,
+      });
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Unable to load dashboard skills';
       toast.error(errorMessage);
@@ -57,6 +70,8 @@ const Dashboard = ({ user }) => {
       setIsLoading(false);
     }
   }, [API_BASE_URL]);
+
+  const [swapCounts, setSwapCounts] = useState({ active: 0, completed: 0 });
 
   useEffect(() => {
     loadDashboardData();
@@ -134,8 +149,8 @@ const Dashboard = ({ user }) => {
     }
   };
 
-  const offeredSkillIds = new Set(offeredSkills.map((item) => item.skillId));
-  const wantedSkillIds = new Set(wantedSkills.map((item) => item.skillId));
+  const offeredSkillIds = useMemo(() => new Set(offeredSkills.map((item) => item.skillId)), [offeredSkills]);
+  const wantedSkillIds = useMemo(() => new Set(wantedSkills.map((item) => item.skillId)), [wantedSkills]);
   const offeredSkillOptions = skills.filter((skill) => !offeredSkillIds.has(skill.id));
   const wantedSkillOptions = skills.filter((skill) => !wantedSkillIds.has(skill.id));
 
@@ -143,8 +158,6 @@ const Dashboard = ({ user }) => {
     <div style={styles.page}>
       <div style={styles.card}>
         <h1 style={styles.title}>Welcome back, {user?.name || 'User'}</h1>
-        <p style={styles.subtitle}>Track your progress and manage your skill mappings here.</p>
-
         {isLoading && <p style={styles.loadingText}>Loading dashboard data...</p>}
 
         <div style={styles.stats}>
@@ -157,11 +170,11 @@ const Dashboard = ({ user }) => {
             <p>Skills Wanted</p>
           </div>
           <div style={styles.statCard}>
-            <h3>0</h3>
+            <h3>{swapCounts.active}</h3>
             <p>Active Swaps</p>
           </div>
           <div style={styles.statCard}>
-            <h3>0</h3>
+            <h3>{swapCounts.completed}</h3>
             <p>Completed</p>
           </div>
         </div>
@@ -303,7 +316,7 @@ const styles = {
     background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
   },
   card: {
-    maxWidth: '980px',
+    maxWidth: '1100px',
     margin: '0 auto',
     background: '#fff',
     borderRadius: '1.25rem',

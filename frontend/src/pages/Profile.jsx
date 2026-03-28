@@ -121,7 +121,6 @@ const Profile = ({ user, onUserUpdate }) => {
       <div className="profile-card">
         <div className="profile-header">
           <h1>Profile Settings</h1>
-          <p>Manage your personal details for skill swapping</p>
         </div>
 
         {isLoadingProfile ? (

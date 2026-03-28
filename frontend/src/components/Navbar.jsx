@@ -1,15 +1,24 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaUser, FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
+import { FaExchangeAlt, FaSearch, FaThLarge, FaUser, FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
 
 const Navbar = ({ isAuthenticated, user, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
+  const getNavLinkStyle = (path, mobile = false) => ({
+    ...(mobile ? styles.mobileNavLink : styles.navLink),
+    ...(location.pathname === path ? styles.activeNavLink : {}),
+  });
+
   const handleLogout = () => {
     onLogout();
     navigate('/login');
+  };
+
+  const handleMenuClose = () => {
+    setIsMenuOpen(false);
   };
 
   const scrollToSection = (sectionId) => {
@@ -51,10 +60,18 @@ const Navbar = ({ isAuthenticated, user, onLogout }) => {
           
           {isAuthenticated ? (
             <div style={styles.userSection}>
-              <Link to="/dashboard" style={styles.navLink}>
-                <FaUser /> Dashboard
+              <Link to="/dashboard" style={getNavLinkStyle('/dashboard')}>
+                <FaThLarge /> Dashboard
               </Link>
-              <Link to="/profile" style={styles.navLink}>Profile</Link>
+              <Link to="/find-match" style={getNavLinkStyle('/find-match')}>
+                <FaSearch /> Find Match
+              </Link>
+              <Link to="/skill-swap" style={getNavLinkStyle('/skill-swap')}>
+                <FaExchangeAlt /> Skill Swap
+              </Link>
+              <Link to="/profile" style={getNavLinkStyle('/profile')}>
+                <FaUser /> Profile
+              </Link>
               <button onClick={handleLogout} style={styles.logoutBtn}>
                 <FaSignOutAlt /> Logout
               </button>
@@ -90,8 +107,18 @@ const Navbar = ({ isAuthenticated, user, onLogout }) => {
             
             {isAuthenticated ? (
               <>
-                <Link to="/dashboard" style={styles.mobileNavLink} onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
-                <Link to="/profile" style={styles.mobileNavLink} onClick={() => setIsMenuOpen(false)}>Profile</Link>
+                <Link to="/dashboard" style={getNavLinkStyle('/dashboard', true)} onClick={handleMenuClose}>
+                  <FaThLarge /> Dashboard
+                </Link>
+                <Link to="/find-match" style={getNavLinkStyle('/find-match', true)} onClick={handleMenuClose}>
+                  <FaSearch /> Find Match
+                </Link>
+                <Link to="/skill-swap" style={getNavLinkStyle('/skill-swap', true)} onClick={handleMenuClose}>
+                  <FaExchangeAlt /> Skill Swap
+                </Link>
+                <Link to="/profile" style={getNavLinkStyle('/profile', true)} onClick={handleMenuClose}>
+                  <FaUser /> Profile
+                </Link>
                 <button onClick={handleLogout} style={styles.mobileLogoutBtn}>Logout</button>
               </>
             ) : (
@@ -153,6 +180,10 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
+  },
+  activeNavLink: {
+    color: '#1d4ed8',
+    fontWeight: '700',
   },
   sectionBtn: {
     background: 'none',
