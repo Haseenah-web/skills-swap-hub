@@ -9,6 +9,8 @@ import Dashboard from './pages/Dashboard';
 import FindMatches from './pages/FindMatches';
 import Profile from './pages/Profile';
 import SkillSwap from './pages/SkillSwap';
+import Favorites from './pages/Favorites';
+import Messages from './pages/Messages';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -128,6 +130,22 @@ function App() {
             <Profile user={user} onUserUpdate={handleUserUpdate} /> :
             <Navigate to="/login" />
           } 
+        />
+        <Route
+          path="/favorites"
+          element={
+            isAuthenticated ?
+            <Favorites /> :
+            <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            isAuthenticated ?
+            <Messages user={user} /> :
+            <Navigate to="/login" />
+          }
         />
       </Routes>
     </Router>

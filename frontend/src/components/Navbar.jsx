@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaExchangeAlt, FaSearch, FaThLarge, FaUser, FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
+import { FaExchangeAlt, FaSearch, FaThLarge, FaUser, FaSignOutAlt, FaBars, FaTimes, FaHeart, FaComments } from 'react-icons/fa';
 
 const Navbar = ({ isAuthenticated, user, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -69,6 +69,12 @@ const Navbar = ({ isAuthenticated, user, onLogout }) => {
               <Link to="/skill-swap" style={getNavLinkStyle('/skill-swap')}>
                 <FaExchangeAlt /> Skill Swap
               </Link>
+              <Link to="/favorites" style={getNavLinkStyle('/favorites')}>
+                <FaHeart /> Favorites
+              </Link>
+              <Link to="/messages" style={getNavLinkStyle('/messages')}>
+                <FaComments /> Messages
+              </Link>
               <Link to="/profile" style={getNavLinkStyle('/profile')}>
                 <FaUser /> Profile
               </Link>
@@ -115,6 +121,12 @@ const Navbar = ({ isAuthenticated, user, onLogout }) => {
                 </Link>
                 <Link to="/skill-swap" style={getNavLinkStyle('/skill-swap', true)} onClick={handleMenuClose}>
                   <FaExchangeAlt /> Skill Swap
+                </Link>
+                <Link to="/favorites" style={getNavLinkStyle('/favorites', true)} onClick={handleMenuClose}>
+                  <FaHeart /> Favorites
+                </Link>
+                <Link to="/messages" style={getNavLinkStyle('/messages', true)} onClick={handleMenuClose}>
+                  <FaComments /> Messages
                 </Link>
                 <Link to="/profile" style={getNavLinkStyle('/profile', true)} onClick={handleMenuClose}>
                   <FaUser /> Profile
