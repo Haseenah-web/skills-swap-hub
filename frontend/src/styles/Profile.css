@@ -104,6 +104,66 @@
   cursor: not-allowed;
 }
 
+.profile-reviews {
+  padding: 0 2rem 2rem;
+}
+
+.profile-reviews__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.profile-reviews__header h2 {
+  margin: 0;
+  color: #1e3a8a;
+}
+
+.profile-reviews__header span {
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.profile-review-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.profile-review-card {
+  border: 1px solid #dbeafe;
+  border-radius: 1rem;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.profile-review-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  color: #0f172a;
+}
+
+.profile-review-card p {
+  margin: 0.55rem 0 0.4rem;
+  color: #334155;
+  line-height: 1.55;
+}
+
+.profile-review-card small {
+  color: #64748b;
+}
+
+.profile-review-empty {
+  color: #64748b;
+  margin: 0;
+}
+
 .profile-skills-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -214,6 +274,10 @@
   .profile-header,
   .profile-form {
     padding: 1.25rem;
+  }
+
+  .profile-reviews {
+    padding: 0 1.25rem 1.25rem;
   }
 
   .profile-grid {

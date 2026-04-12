@@ -13,6 +13,11 @@ const Profile = ({ user, onUserUpdate }) => {
   });
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [reviewSummary, setReviewSummary] = useState({
+    averageRating: null,
+    reviewCount: 0,
+    reviews: [],
+  });
   const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3003').replace(/\/$/, '');
 
   const getAuthConfig = () => {
@@ -46,6 +51,13 @@ const Profile = ({ user, onUserUpdate }) => {
         bio: profile?.bio || '',
       });
       onUserUpdate?.(profile);
+
+      const reviewResponse = await axios.get(`${API_BASE_URL}/api/reviews/user/${profile.id}`, authConfig);
+      setReviewSummary({
+        averageRating: reviewResponse.data?.averageRating ?? null,
+        reviewCount: reviewResponse.data?.reviewCount || 0,
+        reviews: reviewResponse.data?.reviews || [],
+      });
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Unable to load profile';
       toast.error(errorMessage);
@@ -121,6 +133,11 @@ const Profile = ({ user, onUserUpdate }) => {
       <div className="profile-card">
         <div className="profile-header">
           <h1>Profile Settings</h1>
+          <p>
+            {reviewSummary.averageRating ? `${reviewSummary.averageRating}/5 average rating` : 'No ratings yet'}
+            {' • '}
+            {reviewSummary.reviewCount} review{reviewSummary.reviewCount === 1 ? '' : 's'}
+          </p>
         </div>
 
         {isLoadingProfile ? (
@@ -183,6 +200,34 @@ const Profile = ({ user, onUserUpdate }) => {
               {isSaving ? 'Saving...' : 'Save Profile'}
             </button>
           </form>
+        )}
+
+        {!isLoadingProfile && (
+          <section className="profile-reviews">
+            <div className="profile-reviews__header">
+              <h2>Recent Reviews</h2>
+              <span>
+                {reviewSummary.averageRating ? `${reviewSummary.averageRating}/5` : 'No rating'}
+              </span>
+            </div>
+
+            {reviewSummary.reviews.length === 0 ? (
+              <p className="profile-review-empty">No reviews yet. Completed swaps will show feedback here.</p>
+            ) : (
+              <div className="profile-review-list">
+                {reviewSummary.reviews.map((review) => (
+                  <article key={review.id} className="profile-review-card">
+                    <div className="profile-review-top">
+                      <strong>{review.reviewerName}</strong>
+                      <span>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
+                    </div>
+                    {review.comment && <p>{review.comment}</p>}
+                    <small>{new Date(review.createdAt).toLocaleString()}</small>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
         )}
 
       </div>
