@@ -109,12 +109,49 @@ CREATE TABLE IF NOT EXISTS reviews (
   CONSTRAINT chk_review_users_different CHECK (reviewer_id <> reviewee_id)
 ) ENGINE=InnoDB;
 
+-- =========================
+-- FAVOURITES
+-- =========================
+CREATE TABLE IF NOT EXISTS favourites (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  favourite_user_id BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_favourite_pair (user_id, favourite_user_id),
+  CONSTRAINT fk_favourite_owner FOREIGN KEY (user_id)
+    REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_favourite_target FOREIGN KEY (favourite_user_id)
+    REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT chk_favourite_users_different CHECK (user_id <> favourite_user_id)
+) ENGINE=InnoDB;
+
+-- =========================
+-- MESSAGES
+-- =========================
+CREATE TABLE IF NOT EXISTS messages (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sender_id BIGINT UNSIGNED NOT NULL,
+  receiver_id BIGINT UNSIGNED NOT NULL,
+  content TEXT NOT NULL,
+  read_at TIMESTAMP NULL DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_message_sender FOREIGN KEY (sender_id)
+    REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_message_receiver FOREIGN KEY (receiver_id)
+    REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT chk_message_users_different CHECK (sender_id <> receiver_id)
+) ENGINE=InnoDB;
+
 -- Helpful indexes
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_swap_status ON swap_requests(status);
 CREATE INDEX idx_swap_requester ON swap_requests(requester_id);
 CREATE INDEX idx_swap_receiver ON swap_requests(receiver_id);
 CREATE INDEX idx_reviews_reviewee ON reviews(reviewee_id);
+CREATE UNIQUE INDEX uq_reviews_swap_reviewer ON reviews(swap_request_id, reviewer_id);
+CREATE INDEX idx_favourites_owner ON favourites(user_id);
+CREATE INDEX idx_messages_sender_receiver ON messages(sender_id, receiver_id);
+CREATE INDEX idx_messages_receiver_read ON messages(receiver_id, read_at);
 
 -- Seed common skills (optional)
 INSERT IGNORE INTO skills (name, category) VALUES

@@ -13,6 +13,7 @@ const SkillSwap = () => {
   const [incomingSwaps, setIncomingSwaps] = useState([]);
   const [outgoingSwaps, setOutgoingSwaps] = useState([]);
   const [swapDrafts, setSwapDrafts] = useState({});
+  const [reviewDrafts, setReviewDrafts] = useState({});
   const [matchFilters, setMatchFilters] = useState({
     skillId: '',
     city: '',
@@ -188,6 +189,52 @@ const SkillSwap = () => {
       toast.error(errorMessage);
     } finally {
       setIsUpdatingSwapStatus(false);
+    }
+  };
+
+  const handleReviewDraftChange = (swapId, field, value) => {
+    setReviewDrafts((prev) => ({
+      ...prev,
+      [swapId]: {
+        rating: '5',
+        comment: '',
+        ...prev[swapId],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSubmitReview = async (swap, revieweeId) => {
+    const authConfig = getAuthConfig();
+    if (!authConfig) {
+      toast.error('Please login again');
+      return;
+    }
+
+    const draft = reviewDrafts[swap.id] || { rating: '5', comment: '' };
+    const rating = Number(draft.rating);
+    if (!rating || rating < 1 || rating > 5) {
+      toast.error('Choose a rating between 1 and 5');
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${API_BASE_URL}/api/reviews`,
+        {
+          swapRequestId: swap.id,
+          revieweeId,
+          rating,
+          comment: draft.comment || '',
+        },
+        authConfig
+      );
+      setReviewDrafts((prev) => ({ ...prev, [swap.id]: { rating: '5', comment: '' } }));
+      await fetchSwaps();
+      toast.success('Review submitted');
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Unable to submit review';
+      toast.error(errorMessage);
     }
   };
 
@@ -369,6 +416,38 @@ const SkillSwap = () => {
                         </button>
                       )}
                     </div>
+                    {swap.status === 'completed' && !swap.hasReviewedByMe && (
+                      <div style={styles.reviewBox}>
+                        <select
+                          value={(reviewDrafts[swap.id] || { rating: '5' }).rating}
+                          onChange={(e) => handleReviewDraftChange(swap.id, 'rating', e.target.value)}
+                          style={styles.input}
+                        >
+                          <option value="5">5 - Excellent</option>
+                          <option value="4">4 - Good</option>
+                          <option value="3">3 - Fair</option>
+                          <option value="2">2 - Poor</option>
+                          <option value="1">1 - Very poor</option>
+                        </select>
+                        <input
+                          type="text"
+                          value={(reviewDrafts[swap.id] || { comment: '' }).comment || ''}
+                          onChange={(e) => handleReviewDraftChange(swap.id, 'comment', e.target.value)}
+                          placeholder="Share feedback"
+                          style={styles.input}
+                        />
+                        <button
+                          type="button"
+                          style={styles.reviewButton}
+                          onClick={() => handleSubmitReview(swap, swap.requesterId)}
+                        >
+                          Submit Review
+                        </button>
+                      </div>
+                    )}
+                    {swap.status === 'completed' && !!swap.hasReviewedByMe && (
+                      <p style={styles.reviewDoneText}>Your review for this swap has been submitted.</p>
+                    )}
                   </div>
                 ))
               )}
@@ -408,6 +487,38 @@ const SkillSwap = () => {
                         </button>
                       )}
                     </div>
+                    {swap.status === 'completed' && !swap.hasReviewedByMe && (
+                      <div style={styles.reviewBox}>
+                        <select
+                          value={(reviewDrafts[swap.id] || { rating: '5' }).rating}
+                          onChange={(e) => handleReviewDraftChange(swap.id, 'rating', e.target.value)}
+                          style={styles.input}
+                        >
+                          <option value="5">5 - Excellent</option>
+                          <option value="4">4 - Good</option>
+                          <option value="3">3 - Fair</option>
+                          <option value="2">2 - Poor</option>
+                          <option value="1">1 - Very poor</option>
+                        </select>
+                        <input
+                          type="text"
+                          value={(reviewDrafts[swap.id] || { comment: '' }).comment || ''}
+                          onChange={(e) => handleReviewDraftChange(swap.id, 'comment', e.target.value)}
+                          placeholder="Share feedback"
+                          style={styles.input}
+                        />
+                        <button
+                          type="button"
+                          style={styles.reviewButton}
+                          onClick={() => handleSubmitReview(swap, swap.receiverId)}
+                        >
+                          Submit Review
+                        </button>
+                      </div>
+                    )}
+                    {swap.status === 'completed' && !!swap.hasReviewedByMe && (
+                      <p style={styles.reviewDoneText}>Your review for this swap has been submitted.</p>
+                    )}
                   </div>
                 ))
               )}
@@ -578,6 +689,29 @@ const styles = {
     display: 'flex',
     gap: '0.45rem',
     marginTop: '0.5rem',
+    flexWrap: 'wrap',
+  },
+  reviewBox: {
+    display: 'grid',
+    gap: '0.55rem',
+    marginTop: '0.75rem',
+    paddingTop: '0.75rem',
+    borderTop: '1px solid #dbeafe',
+  },
+  reviewButton: {
+    border: 'none',
+    borderRadius: '0.6rem',
+    padding: '0.6rem 0.8rem',
+    background: '#0f766e',
+    color: '#fff',
+    cursor: 'pointer',
+    fontWeight: 600,
+  },
+  reviewDoneText: {
+    margin: '0.75rem 0 0',
+    color: '#0f766e',
+    fontSize: '0.9rem',
+    fontWeight: 600,
   },
   acceptButton: {
     border: 'none',
