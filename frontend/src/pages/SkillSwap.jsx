@@ -7,6 +7,7 @@ const SkillSwap = () => {
   const [isLoadingSwaps, setIsLoadingSwaps] = useState(false);
   const [isUpdatingSwapStatus, setIsUpdatingSwapStatus] = useState(false);
   const [isCreatingSwap, setIsCreatingSwap] = useState(false);
+  const [submittingReviewSwapId, setSubmittingReviewSwapId] = useState(null);
   const [skills, setSkills] = useState([]);
   const [offeredSkills, setOfferedSkills] = useState([]);
   const [matches, setMatches] = useState([]);
@@ -218,6 +219,7 @@ const SkillSwap = () => {
       return;
     }
 
+    setSubmittingReviewSwapId(swap.id);
     try {
       await axios.post(
         `${API_BASE_URL}/api/reviews`,
@@ -235,6 +237,8 @@ const SkillSwap = () => {
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Unable to submit review';
       toast.error(errorMessage);
+    } finally {
+      setSubmittingReviewSwapId(null);
     }
   };
 
@@ -439,9 +443,10 @@ const SkillSwap = () => {
                         <button
                           type="button"
                           style={styles.reviewButton}
+                          disabled={submittingReviewSwapId === swap.id}
                           onClick={() => handleSubmitReview(swap, swap.requesterId)}
                         >
-                          Submit Review
+                          {submittingReviewSwapId === swap.id ? 'Submitting...' : 'Submit Rating & Review'}
                         </button>
                       </div>
                     )}
@@ -510,9 +515,10 @@ const SkillSwap = () => {
                         <button
                           type="button"
                           style={styles.reviewButton}
+                          disabled={submittingReviewSwapId === swap.id}
                           onClick={() => handleSubmitReview(swap, swap.receiverId)}
                         >
-                          Submit Review
+                          {submittingReviewSwapId === swap.id ? 'Submitting...' : 'Submit Rating & Review'}
                         </button>
                       </div>
                     )}
