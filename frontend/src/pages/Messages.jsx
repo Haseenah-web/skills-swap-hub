@@ -13,6 +13,7 @@ const Messages = ({ user }) => {
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isUpdatingFavourite, setIsUpdatingFavourite] = useState(false);
 
   const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3003').replace(/\/$/, '');
   const initialQueryUserId = useMemo(() => searchParams.get('userId') || '', [searchParams]);
@@ -129,6 +130,37 @@ const Messages = ({ user }) => {
     }
   };
 
+  const handleToggleFavourite = async () => {
+    const authConfig = getAuthConfig();
+    if (!authConfig || !selectedConversation) {
+      toast.error('Please login again');
+      return;
+    }
+
+    setIsUpdatingFavourite(true);
+    try {
+      if (selectedConversation.isFavourite) {
+        await axios.delete(`${API_BASE_URL}/api/favourites/${selectedConversation.id}`, authConfig);
+      } else {
+        await axios.post(`${API_BASE_URL}/api/favourites`, { userId: selectedConversation.id }, authConfig);
+      }
+
+      const nextIsFavourite = !selectedConversation.isFavourite;
+      setSelectedConversation((prev) => (prev ? { ...prev, isFavourite: nextIsFavourite } : prev));
+      setConversations((prev) => prev.map((item) => (
+        Number(item.userId) === Number(selectedConversation.id)
+          ? { ...item, isFavourite: nextIsFavourite }
+          : item
+      )));
+      toast.success(nextIsFavourite ? 'Added to favourites' : 'Removed from favourites');
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Unable to update favourite';
+      toast.error(errorMessage);
+    } finally {
+      setIsUpdatingFavourite(false);
+    }
+  };
+
   return (
     <div style={styles.page}>
       <div style={styles.shell}>
@@ -191,6 +223,16 @@ const Messages = ({ user }) => {
                     {selectedConversation.city || 'City not set'} • {selectedConversation.averageRating ? `${selectedConversation.averageRating}/5` : 'No ratings'} • {selectedConversation.reviewCount || 0} reviews
                   </p>
                 </div>
+                <button
+                  type="button"
+                  style={selectedConversation.isFavourite ? styles.favouriteButtonActive : styles.favouriteButton}
+                  onClick={handleToggleFavourite}
+                  disabled={isUpdatingFavourite}
+                >
+                  {isUpdatingFavourite
+                    ? 'Saving...'
+                    : (selectedConversation.isFavourite ? 'Remove Favourite' : 'Add Favourite')}
+                </button>
               </div>
 
               <div style={styles.messageList}>
@@ -341,6 +383,11 @@ const styles = {
   panelHeader: {
     padding: '1.25rem 1.25rem 1rem',
     borderBottom: '1px solid #cffafe',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '1rem',
+    flexWrap: 'wrap',
   },
   panelTitle: {
     margin: 0,
@@ -349,6 +396,24 @@ const styles = {
   panelMeta: {
     margin: '0.35rem 0 0',
     color: '#475569',
+  },
+  favouriteButton: {
+    border: '1px solid #0891b2',
+    borderRadius: '999px',
+    padding: '0.7rem 1rem',
+    background: '#ffffff',
+    color: '#0f766e',
+    fontWeight: 700,
+    cursor: 'pointer',
+  },
+  favouriteButtonActive: {
+    border: '1px solid #0f766e',
+    borderRadius: '999px',
+    padding: '0.7rem 1rem',
+    background: '#ccfbf1',
+    color: '#115e59',
+    fontWeight: 700,
+    cursor: 'pointer',
   },
   messageList: {
     flex: 1,
